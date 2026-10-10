@@ -10,6 +10,7 @@ import 'package:PiliPlus/pages/setting/widgets/ordered_multi_select_dialog.dart'
 import 'package:PiliPlus/pages/setting/widgets/select_dialog.dart';
 import 'package:PiliPlus/plugin/pl_player/models/audio_output_type.dart';
 import 'package:PiliPlus/plugin/pl_player/models/hwdec_type.dart';
+import 'package:PiliPlus/utils/cdn_auto_select.dart';
 import 'package:PiliPlus/utils/filtering_text.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
@@ -61,6 +62,14 @@ List<SettingsModel> get videoSettings => [
     getSubtitle: () =>
         '当前使用：${VideoUtils.cdnService.desc}，部分 CDN 可能失效，如无法播放请尝试切换',
     onTap: _showCDNDialog,
+  ),
+  const SwitchModel(
+    title: '自动选择最快 CDN',
+    subtitle: '播放时在后台对各 CDN 测速（约 1MB/CDN，每 6 小时一次），之后的播放自动使用最快的 CDN，不影响当前播放',
+    leading: Icon(Icons.network_check),
+    setKey: SettingBoxKey.autoSelectCdn,
+    defaultVal: true,
+    onChanged: CdnAutoSelector.onToggle,
   ),
   NormalModel(
     title: '直播 CDN 设置',
@@ -186,6 +195,7 @@ Future<void> _showCDNDialog(BuildContext context, VoidCallback setState) async {
   );
   if (res != null) {
     VideoUtils.cdnService = res;
+    CdnAutoSelector.onManualSelect(res);
     await GStorage.setting.put(SettingBoxKey.CDNService, res.name);
     setState();
   }

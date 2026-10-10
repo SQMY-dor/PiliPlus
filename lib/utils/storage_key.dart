@@ -159,6 +159,15 @@ abstract final class SettingBoxKey {
       enableDocProvider = 'enableDocProvider',
       enableEmoteTooltip = 'enableEmoteTooltip';
 
+  // Make-Bilibili-Great-Than-Ever-Before features
+  static const String autoSelectCdn = 'autoSelectCdn',
+      autoCdnRanking = 'autoCdnRanking',
+      autoCdnTime = 'autoCdnTime',
+      liveForceOrigin = 'liveForceOrigin',
+      stripTrackingParams = 'stripTrackingParams',
+      blockTelemetry = 'blockTelemetry',
+      threadRipper = 'threadRipper';
+
   static const String minimizeOnExit = 'minimizeOnExit',
       windowSize = 'windowSize',
       windowPosition = 'windowPosition',

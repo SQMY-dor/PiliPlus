@@ -1047,4 +1047,28 @@ abstract final class Pref {
 
   static bool get enableEmoteTooltip =>
       _setting.get(SettingBoxKey.enableEmoteTooltip, defaultValue: false);
+
+  static bool get autoSelectCdn =>
+      _setting.get(SettingBoxKey.autoSelectCdn, defaultValue: true);
+
+  /// CDNService names, fastest first, from the last automatic speed test
+  static List<String> get autoCdnRanking =>
+      (_setting.get(SettingBoxKey.autoCdnRanking) as List?)?.cast<String>() ??
+      const [];
+
+  /// unix ms of the last automatic speed test
+  static int get autoCdnTime =>
+      _setting.get(SettingBoxKey.autoCdnTime, defaultValue: 0);
+
+  static bool get liveForceOrigin =>
+      _setting.get(SettingBoxKey.liveForceOrigin, defaultValue: true);
+
+  static bool get stripTrackingParams =>
+      _setting.get(SettingBoxKey.stripTrackingParams, defaultValue: true);
+
+  static bool get blockTelemetry =>
+      _setting.get(SettingBoxKey.blockTelemetry, defaultValue: true);
+
+  static bool get threadRipper =>
+      _setting.get(SettingBoxKey.threadRipper, defaultValue: false);
 }
