@@ -1,6 +1,7 @@
 import 'dart:convert' show JsonEncoder, base64;
 import 'dart:math' show Random;
 
+import 'package:PiliPlus/utils/url_cleaner.dart';
 import 'package:catcher_2/catcher_2.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -30,15 +31,23 @@ abstract final class Utils {
     String text, {
     bool needToast = true,
     String? toastText,
+    bool cleanUrl = true,
   }) {
     if (needToast) {
       SmartDialog.showToast(toastText ?? '已复制');
+    }
+    if (cleanUrl) {
+      text = UrlCleaner.maybeCleanText(text);
     }
     return Clipboard.setData(ClipboardData(text: text));
   }
 
   static Future<void> copyJson(Object? json, {String? toastText}) {
-    return copyText(jsonEncoder.convert(json), toastText: toastText);
+    return copyText(
+      jsonEncoder.convert(json),
+      toastText: toastText,
+      cleanUrl: false,
+    );
   }
 
   static String makeHeroTag(dynamic v) {

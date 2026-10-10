@@ -1,10 +1,18 @@
 import 'package:PiliPlus/models/common/account_type.dart';
 import 'package:PiliPlus/pages/setting/models/model.dart';
 import 'package:PiliPlus/utils/accounts/api_type.dart';
+import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 List<SettingsModel> get privacySettings => [
+  const SwitchModel(
+    title: '分享链接去除追踪参数',
+    subtitle: '复制/分享链接及打开 b23.tv 等链接时，移除 spm_id_from、vd_source、share_* 等追踪参数',
+    leading: Icon(Icons.link_off),
+    setKey: SettingBoxKey.stripTrackingParams,
+    defaultVal: true,
+  ),
   NormalModel(
     onTap: (context, setState) => Get.toNamed('/blackListPage'),
     title: '黑名单管理',

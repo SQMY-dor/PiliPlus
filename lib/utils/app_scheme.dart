@@ -23,6 +23,7 @@ import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/parse_string.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
+import 'package:PiliPlus/utils/url_cleaner.dart';
 import 'package:PiliPlus/utils/url_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:app_links/app_links.dart';
@@ -483,6 +484,14 @@ abstract final class PiliScheme {
       if (redirectUrl != null) {
         uri = Uri.parse(redirectUrl);
         host = uri.host;
+      }
+    }
+
+    if (UrlCleaner.enabled) {
+      // 去除追踪参数，保留路由需要的参数
+      final cleaned = UrlCleaner.cleanUrl(uri.toString(), keep: const {'mid'});
+      if (cleaned != uri.toString()) {
+        uri = Uri.parse(cleaned);
       }
     }
 
