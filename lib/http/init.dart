@@ -6,6 +6,7 @@ import 'package:PiliPlus/http/api.dart';
 import 'package:PiliPlus/http/constants.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/http/retry_interceptor.dart';
+import 'package:PiliPlus/http/telemetry_blocker.dart';
 import 'package:PiliPlus/http/user.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
@@ -223,6 +224,9 @@ class Request {
       ..httpClientAdapter = _enableHttp2
           ? Http2Adapter(connectionManager, fallbackAdapter: h11)
           : h11;
+
+    // 屏蔽日志上报/埋点，先于重试
+    dio.interceptors.add(const TelemetryBlocker());
 
     // 先于其他Interceptor
     if (Pref.retryCount != 0) {

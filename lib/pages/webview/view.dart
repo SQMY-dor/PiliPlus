@@ -4,6 +4,7 @@ import 'package:PiliPlus/common/widgets/route_aware_mixin.dart'
     show routeObserver;
 import 'package:PiliPlus/common/widgets/selection_text.dart';
 import 'package:PiliPlus/http/browser_ua.dart';
+import 'package:PiliPlus/http/telemetry_blocker.dart';
 import 'package:PiliPlus/main.dart' show webViewEnvironment;
 import 'package:PiliPlus/models/common/webview_menu_type.dart';
 import 'package:PiliPlus/plugin/linux_webview.dart';
@@ -411,6 +412,20 @@ document.addEventListener('click', function(e) {
                   useShouldOverrideUrlLoading: true,
                   userAgent: userAgent,
                   mixedContentMode: MixedContentMode.MIXED_CONTENT_ALWAYS_ALLOW,
+                  contentBlockers: TelemetryBlocker.enabled
+                      ? TelemetryBlocker.webviewUrlFilters
+                            .map(
+                              (filter) => ContentBlocker(
+                                trigger: ContentBlockerTrigger(
+                                  urlFilter: filter,
+                                ),
+                                action: ContentBlockerAction(
+                                  type: ContentBlockerActionType.BLOCK,
+                                ),
+                              ),
+                            )
+                            .toList()
+                      : null,
                 ),
                 initialUrlRequest: URLRequest(
                   url: WebUri.uri(Uri.tryParse(_currentUrl) ?? Uri()),

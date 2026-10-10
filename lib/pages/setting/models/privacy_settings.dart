@@ -13,6 +13,13 @@ List<SettingsModel> get privacySettings => [
     setKey: SettingBoxKey.stripTrackingParams,
     defaultVal: true,
   ),
+  const SwitchModel(
+    title: '屏蔽日志上报/埋点',
+    subtitle: '拦截 data.bilibili.com、cm.bilibili.com 等日志上报与广告追踪请求（含内置浏览器）；不影响历史记录/心跳上报',
+    leading: Icon(Icons.shield_outlined),
+    setKey: SettingBoxKey.blockTelemetry,
+    defaultVal: true,
+  ),
   NormalModel(
     onTap: (context, setState) => Get.toNamed('/blackListPage'),
     title: '黑名单管理',
