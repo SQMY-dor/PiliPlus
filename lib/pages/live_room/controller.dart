@@ -36,6 +36,7 @@ import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
 import 'package:PiliPlus/utils/extension/rx_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
+import 'package:PiliPlus/utils/live_origin_utils.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
@@ -44,7 +45,8 @@ import 'package:PiliPlus/utils/utils.dart';
 import 'package:PiliPlus/utils/video_utils.dart';
 import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:easy_debounce/easy_throttle.dart';
-import 'package:flutter/foundation.dart' show kDebugMode, kReleaseMode;
+import 'package:flutter/foundation.dart'
+    show kDebugMode, kReleaseMode, debugPrint;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
@@ -126,6 +128,10 @@ class LiveRoomController extends GetxController {
   PageController? pageController;
 
   int? currentQn = PlatformUtils.isMobile ? null : Pref.liveQuality;
+
+  /// 直播强制原画: 用户手动切换画质后不再强制
+  late bool _forceOrigin = Pref.liveForceOrigin;
+  bool _forceOriginChecked = false;
   final currentQnDesc = ''.obs;
   final RxBool isPortrait = false.obs;
   late List<({int code, String desc})> acceptQnList = [];
@@ -233,9 +239,16 @@ class LiveRoomController extends GetxController {
     currentQn ??= await ConnectivityUtils.isWiFi
         ? Pref.liveQuality
         : Pref.liveQualityCellular;
+    if (_forceOrigin && !_forceOriginChecked) {
+      _forceOriginChecked = true;
+      // 原画码率较高，仅在 Wi-Fi 下强制
+      _forceOrigin = await ConnectivityUtils.isWiFi;
+    }
     final res = await LiveHttp.liveRoomInfo(
       roomId: roomId,
-      qn: currentQn,
+      qn: _forceOrigin
+          ? math.max(currentQn!, LiveQuality.origin.code)
+          : currentQn,
       onlyAudio: plPlayerController.onlyPlayAudio.value,
     );
     if (res case Success(:final response)) {
@@ -333,7 +346,31 @@ class LiveRoomController extends GetxController {
     currentQnDesc.value =
         LiveQuality.fromCode(currentQn)?.desc ?? currentQn.toString();
     videoUrl = VideoUtils.getLiveCdnUrl(item, index: liveUrlIndex);
+    if (_forceOrigin) {
+      if (LiveOriginUtils.forceOrigin(videoUrl!) case final originUrl?) {
+        return _initOriginUrl(originUrl);
+      }
+    }
     return playerInit()?.whenComplete(_startSizeSub);
+  }
+
+  /// 使用原画地址播放，不可用时回退到服务端返回的地址
+  Future<void> _initOriginUrl(String originUrl) async {
+    final fallbackUrl = videoUrl;
+    if (await LiveOriginUtils.probe(originUrl)) {
+      if (isClosed || videoUrl != fallbackUrl) return;
+      videoUrl = originUrl;
+      if ((currentQn ?? 0) < LiveQuality.origin.code) {
+        currentQn = LiveQuality.origin.code;
+      }
+      currentQnDesc.value = LiveQuality.origin.desc;
+    } else {
+      if (isClosed || videoUrl != fallbackUrl) return;
+      // 本直播间不再尝试
+      _forceOrigin = false;
+      if (kDebugMode) debugPrint('force origin failed, fallback: $fallbackUrl');
+    }
+    await playerInit()?.whenComplete(_startSizeSub);
   }
 
   Future<void> queryLiveInfoH5() async {
@@ -534,6 +571,7 @@ class LiveRoomController extends GetxController {
       return null;
     }
     currentQn = qn;
+    _forceOrigin = false;
     currentQnDesc.value =
         LiveQuality.fromCode(currentQn)?.desc ?? currentQn.toString();
     return queryLiveUrl();

@@ -126,6 +126,13 @@ List<SettingsModel> get videoSettings => [
     getSubtitle: () => '当前画质：${LiveQuality.fromCode(Pref.liveQuality)?.desc}',
     onTap: _showLiveQaDialog,
   ),
+  const SwitchModel(
+    title: '直播强制原画',
+    subtitle: '仅 Wi-Fi 下生效。自动请求并播放直播原画流（去除转码后缀），不可用时自动回退；手动切换画质后对当前直播间失效',
+    leading: Icon(Icons.high_quality_outlined),
+    setKey: SettingBoxKey.liveForceOrigin,
+    defaultVal: true,
+  ),
   NormalModel(
     title: '蜂窝网络直播默认画质',
     leading: const Icon(Icons.video_settings_outlined),
