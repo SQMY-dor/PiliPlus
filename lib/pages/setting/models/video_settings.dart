@@ -71,6 +71,13 @@ List<SettingsModel> get videoSettings => [
     defaultVal: true,
     onChanged: CdnAutoSelector.onToggle,
   ),
+  const SwitchModel(
+    title: '多 CDN 并发分片加速（实验性）',
+    subtitle: '通过本地代理将视频分片后从多个 CDN 并行下载，可能提升速度，也会额外消耗流量；出错时自动回退为直连。对下次打开的视频生效',
+    leading: Icon(Icons.call_split),
+    setKey: SettingBoxKey.threadRipper,
+    defaultVal: false,
+  ),
   NormalModel(
     title: '直播 CDN 设置',
     leading: const Icon(MdiIcons.cloudPlusOutline),
