@@ -2,6 +2,7 @@ import 'package:PiliPlus/pages/setting/models/model.dart';
 import 'package:PiliPlus/pages/setting/widgets/select_dialog.dart';
 import 'package:PiliPlus/pages/setting/widgets/slider_dialog.dart';
 import 'package:PiliPlus/utils/dafeiyu/dafeiyu.dart';
+import 'package:PiliPlus/utils/dafeiyu/dafeiyu_llm.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -97,4 +98,118 @@ List<SettingsModel> get dafeiyuSettings => [
       );
     },
   ),
+  SwitchModel(
+    title: 'DeepSeek 精判',
+    subtitle: '离线规则拿不准的账号交给 DeepSeek 再判一次（需自备 API Key，只发送可疑账号的昵称、等级和最多 3 条评论到 api.deepseek.com，结果缓存 7 天）',
+    leading: const Icon(Icons.psychology_outlined),
+    setKey: SettingBoxKey.dfyLlmEnable,
+    defaultVal: false,
+    onChanged: (value) {
+      Dafeiyu.llmEnable = value;
+      Dafeiyu.tick.value++;
+    },
+  ),
+  NormalModel(
+    title: 'DeepSeek API Key',
+    leading: const Icon(Icons.key_outlined),
+    getSubtitle: () {
+      final key = Dafeiyu.llmKey;
+      if (key.isEmpty) return '未设置，到 platform.deepseek.com 申请';
+      return '已设置：${key.length > 8 ? '${key.substring(0, 5)}…${key.substring(key.length - 4)}' : '****'}';
+    },
+    onTap: _showKeyDialog,
+  ),
+  NormalModel(
+    title: 'DeepSeek 模型',
+    leading: const Icon(Icons.memory_outlined),
+    getSubtitle: () =>
+        DfyLlm.models
+            .firstWhere(
+              (e) => e.$1 == Dafeiyu.llmModel,
+              orElse: () => (Dafeiyu.llmModel, Dafeiyu.llmModel),
+            )
+            .$2,
+    onTap: (context, setState) async {
+      final res = await showDialog<String>(
+        context: context,
+        builder: (context) => SelectDialog<String>(
+          title: 'DeepSeek 模型',
+          value: Dafeiyu.llmModel,
+          values: DfyLlm.models,
+        ),
+      );
+      if (res != null) {
+        Dafeiyu.llmModel = res;
+        await GStorage.setting.put(SettingBoxKey.dfyLlmModel, res);
+        setState();
+      }
+    },
+  ),
+  SwitchModel(
+    title: '自动精判可疑账号',
+    subtitle: '关闭后只能在「大肥鱼鉴定」弹窗里手动精判',
+    leading: const Icon(Icons.auto_awesome_outlined),
+    setKey: SettingBoxKey.dfyLlmAuto,
+    defaultVal: true,
+    onChanged: (value) => Dafeiyu.llmAuto = value,
+  ),
+  NormalModel(
+    title: '清空精判缓存',
+    leading: const Icon(Icons.delete_sweep_outlined),
+    getSubtitle: () => '已缓存 ${Dafeiyu.llmCacheSize} 个账号的精判结果',
+    onTap: (context, setState) {
+      Dafeiyu.clearLlmCache();
+      setState();
+      SmartDialog.showToast('已清空');
+    },
+  ),
 ];
+
+void _showKeyDialog(BuildContext context, VoidCallback setState) {
+  final controller = TextEditingController(text: Dafeiyu.llmKey);
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('DeepSeek API Key'),
+      content: TextField(
+        controller: controller,
+        autofocus: true,
+        obscureText: true,
+        decoration: const InputDecoration(hintText: 'sk-...'),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () async {
+            final key = controller.text.trim();
+            if (key.isEmpty) {
+              SmartDialog.showToast('先填入密钥');
+              return;
+            }
+            SmartDialog.showLoading(msg: '连接中…');
+            final res = await DfyLlm.testKey(key, Dafeiyu.llmModel);
+            SmartDialog.dismiss();
+            SmartDialog.showToast(res.msg);
+          },
+          child: const Text('测试'),
+        ),
+        TextButton(
+          onPressed: Get.back,
+          child: Text(
+            '取消',
+            style: TextStyle(color: ColorScheme.of(context).outline),
+          ),
+        ),
+        TextButton(
+          onPressed: () async {
+            final key = controller.text.trim();
+            Get.back();
+            Dafeiyu.llmKey = key;
+            await GStorage.setting.put(SettingBoxKey.dfyLlmKey, key);
+            setState();
+          },
+          child: const Text('保存'),
+        ),
+      ],
+    ),
+  ).whenComplete(controller.dispose);
+}

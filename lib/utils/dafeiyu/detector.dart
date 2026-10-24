@@ -29,8 +29,18 @@ class DfyVerdict {
     required this.raw,
     required this.level,
     required this.reasons,
+    this.offline,
+    this.llmAi,
+    this.llmReason,
   });
   final int score;
+
+  /// offline score before mixing in DeepSeek, when [llmAi] is set
+  final int? offline;
+
+  /// DeepSeek AI probability (0-100)
+  final int? llmAi;
+  final String? llmReason;
 
   /// score without the "前科" bonus, used to decide whether to record a prior
   final int raw;

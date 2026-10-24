@@ -34,6 +34,7 @@ import 'package:PiliPlus/plugin/pl_player/models/fullscreen_mode.dart';
 import 'package:PiliPlus/plugin/pl_player/models/hwdec_type.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
 import 'package:PiliPlus/utils/dafeiyu/dafeiyu.dart' show DfyAction;
+import 'package:PiliPlus/utils/dafeiyu/dafeiyu_llm.dart' show DfyLlmResult;
 import 'package:PiliPlus/utils/device_utils.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
@@ -1105,5 +1106,30 @@ abstract final class Pref {
         if (e.key is int && e.value is List)
           e.key as int: (e.value as List).cast<int>().toList(),
     };
+  }
+
+  static bool get dfyLlmEnable =>
+      _setting.get(SettingBoxKey.dfyLlmEnable, defaultValue: false);
+
+  static bool get dfyLlmAuto =>
+      _setting.get(SettingBoxKey.dfyLlmAuto, defaultValue: true);
+
+  static String get dfyLlmKey =>
+      _setting.get(SettingBoxKey.dfyLlmKey, defaultValue: '');
+
+  static String get dfyLlmModel =>
+      _setting.get(SettingBoxKey.dfyLlmModel, defaultValue: 'deepseek-flash');
+
+  static Map<int, DfyLlmResult> get dfyLlmCache {
+    final raw = _localCache.get(LocalCacheKey.dfyLlmCache);
+    if (raw is! Map) return <int, DfyLlmResult>{};
+    final res = <int, DfyLlmResult>{};
+    for (final e in raw.entries) {
+      if (e.key is! int) continue;
+      try {
+        if (DfyLlmResult.fromJson(e.value) case final v?) res[e.key as int] = v;
+      } catch (_) {}
+    }
+    return res;
   }
 }

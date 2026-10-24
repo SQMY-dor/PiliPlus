@@ -45,7 +45,7 @@ class DfyBadge extends StatelessWidget {
           borderRadius: const BorderRadius.all(Radius.circular(3)),
         ),
         child: Text(
-          '${verdict.level == DfyLevel.fish ? '🐟 ' : ''}${verdict.level.label} ${verdict.score}%',
+          '${verdict.level == DfyLevel.fish ? '🐟 ' : ''}${verdict.level.label} ${verdict.score}%${verdict.llmAi != null ? ' · DS' : ''}',
           style: TextStyle(fontSize: 9, height: 1.2, color: color),
           textScaler: TextScaler.noScaling,
         ),
@@ -94,6 +94,7 @@ void showDfyReport(
   VoidCallback? onChanged,
 }) {
   final mid = item.mid.toInt();
+  final parentContext = context;
   showDialog(
     context: context,
     builder: (context) {
@@ -156,15 +157,63 @@ void showDfyReport(
                     ],
                   ),
                 ),
+              if (verdict.llmAi != null) ...[
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4D6BFE).withValues(alpha: 0.12),
+                    borderRadius: const BorderRadius.all(Radius.circular(8)),
+                  ),
+                  child: Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text:
+                              'DeepSeek 精判 · AI 概率 ${verdict.llmAi}%'
+                              '${verdict.offline != null ? ' · 离线 ${verdict.offline}%' : ''}\n',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF4D6BFE),
+                          ),
+                        ),
+                        TextSpan(text: verdict.llmReason ?? ''),
+                      ],
+                    ),
+                    style: const TextStyle(fontSize: 13, height: 1.5),
+                  ),
+                ),
+              ],
               const SizedBox(height: 8),
               Text(
-                '离线规则判定，仅在本机标记，不会删评论或举报。',
+                verdict.llmAi != null
+                    ? '最终分 = 离线 45% + DeepSeek 55%，仅在本机标记，不会删评论或举报。'
+                    : '离线规则判定，仅在本机标记，不会删评论或举报。',
                 style: TextStyle(fontSize: 12, color: colorScheme.outline),
               ),
             ],
           ),
         ),
         actions: [
+          if (Dafeiyu.canLlm && verdict.llmAi == null)
+            TextButton(
+              onPressed: () async {
+                Get.back();
+                final v = await Dafeiyu.judgeNow(item);
+                if (v != null && parentContext.mounted) {
+                  onChanged?.call();
+                  showDfyReport(
+                    parentContext,
+                    item: item,
+                    verdict: v,
+                    onSendHome: onSendHome,
+                    onChanged: onChanged,
+                  );
+                }
+              },
+              child: const Text('DeepSeek 精判'),
+            ),
           TextButton(
             onPressed: () {
               Get.back();

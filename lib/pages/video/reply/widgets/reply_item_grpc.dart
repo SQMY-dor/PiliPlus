@@ -101,6 +101,22 @@ class ReplyItemGrpc extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!Dafeiyu.enable) return _build(context);
+    // rebuild when DeepSeek results or the whitelist change
+    return ValueListenableBuilder<int>(
+      valueListenable: Dafeiyu.tick,
+      builder: (context, _, _) {
+        if (replyLevel != 0 &&
+            onDelete != null &&
+            Dafeiyu.shouldHide(replyItem)) {
+          return const SizedBox.shrink();
+        }
+        return _build(context);
+      },
+    );
+  }
+
+  Widget _build(BuildContext context) {
     final colorScheme = ColorScheme.of(context);
 
     void showMore() => showModalBottomSheet(

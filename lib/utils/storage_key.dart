@@ -171,7 +171,11 @@ abstract final class SettingBoxKey {
   // dafeiyu-cleaner
   static const String dfyEnable = 'dfyEnable',
       dfyThreshold = 'dfyThreshold',
-      dfyAction = 'dfyAction';
+      dfyAction = 'dfyAction',
+      dfyLlmEnable = 'dfyLlmEnable',
+      dfyLlmAuto = 'dfyLlmAuto',
+      dfyLlmKey = 'dfyLlmKey',
+      dfyLlmModel = 'dfyLlmModel';
 
   static const String minimizeOnExit = 'minimizeOnExit',
       windowSize = 'windowSize',
@@ -266,7 +270,8 @@ abstract final class LocalCacheKey {
       buvid = 'buvid',
       dfyWhitelist = 'dfyWhitelist',
       dfySentHome = 'dfySentHome',
-      dfyPriors = 'dfyPriors';
+      dfyPriors = 'dfyPriors',
+      dfyLlmCache = 'dfyLlmCache';
 }
 
 abstract final class VideoBoxKey {
