@@ -4,6 +4,7 @@ import 'package:PiliPlus/grpc/bilibili/pagination.pb.dart';
 import 'package:PiliPlus/grpc/grpc_req.dart';
 import 'package:PiliPlus/grpc/url.dart';
 import 'package:PiliPlus/http/loading_state.dart';
+import 'package:PiliPlus/utils/dafeiyu/dafeiyu.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:fixnum/fixnum.dart';
@@ -80,6 +81,19 @@ abstract final class ReplyGrpc {
           return hasMatch;
         });
       }
+
+      // dafeiyu-cleaner
+      if (Dafeiyu.enable) {
+        Dafeiyu.process(
+          response.replies,
+          upMid: response.subjectControl.upMid,
+        );
+        if (response.hasUpTop() &&
+            Dafeiyu.action == DfyAction.hide &&
+            Dafeiyu.isFish(response.upTop)) {
+          response.clearUpTop();
+        }
+      }
     }
     return res;
   }
@@ -105,7 +119,17 @@ abstract final class ReplyGrpc {
       ),
       DetailListReply.fromBuffer,
     );
-    return res..dataOrNull?.root.replies.removeWhere(needRemoveGrpc);
+    if (res case Success(:final response)) {
+      response.root.replies.removeWhere(needRemoveGrpc);
+      if (Dafeiyu.enable) {
+        Dafeiyu.process(
+          response.root.replies,
+          root: response.root,
+          upMid: response.subjectControl.upMid,
+        );
+      }
+    }
+    return res;
   }
 
   static Future<LoadingState<DialogListReply>> dialogList({
@@ -126,7 +150,16 @@ abstract final class ReplyGrpc {
       ),
       DialogListReply.fromBuffer,
     );
-    return res..dataOrNull?.replies.removeWhere(needRemoveGrpc);
+    if (res case Success(:final response)) {
+      response.replies.removeWhere(needRemoveGrpc);
+      if (Dafeiyu.enable) {
+        Dafeiyu.process(
+          response.replies,
+          upMid: response.subjectControl.upMid,
+        );
+      }
+    }
+    return res;
   }
 
   static Future<LoadingState<SearchItemReply>> searchItem({

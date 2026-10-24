@@ -168,6 +168,11 @@ abstract final class SettingBoxKey {
       blockTelemetry = 'blockTelemetry',
       threadRipper = 'threadRipper';
 
+  // dafeiyu-cleaner
+  static const String dfyEnable = 'dfyEnable',
+      dfyThreshold = 'dfyThreshold',
+      dfyAction = 'dfyAction';
+
   static const String minimizeOnExit = 'minimizeOnExit',
       windowSize = 'windowSize',
       windowPosition = 'windowPosition',
@@ -258,7 +263,10 @@ abstract final class LocalCacheKey {
       danmakuFilterRules = 'danmakuFilterRules',
       mixinKey = 'mixinKey',
       timeStamp = 'timeStamp',
-      buvid = 'buvid';
+      buvid = 'buvid',
+      dfyWhitelist = 'dfyWhitelist',
+      dfySentHome = 'dfySentHome',
+      dfyPriors = 'dfyPriors';
 }
 
 abstract final class VideoBoxKey {

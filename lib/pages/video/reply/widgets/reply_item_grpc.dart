@@ -30,6 +30,8 @@ import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:PiliPlus/utils/color_utils.dart';
+import 'package:PiliPlus/utils/dafeiyu/dafeiyu.dart';
+import 'package:PiliPlus/utils/dafeiyu/dafeiyu_widgets.dart';
 import 'package:PiliPlus/utils/danmaku_utils.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
@@ -195,6 +197,20 @@ class ReplyItemGrpc extends StatelessWidget {
                       isSeniorMember: member.isSeniorMember == 1,
                       height: 11,
                     ),
+                    if (Dafeiyu.verdictOf(replyItem) case final verdict?
+                        when verdict.level != DfyLevel.human)
+                      DfyBadge(
+                        item: replyItem,
+                        verdict: verdict,
+                        onSendHome: onDelete == null
+                            ? null
+                            : () => onDelete!(replyItem, null),
+                        onChanged: () {
+                          if (context.mounted) {
+                            (context as Element).markNeedsBuild();
+                          }
+                        },
+                      ),
                     if (replyItem.mid == upMid)
                       const PBadge(
                         text: 'UP',
@@ -328,6 +344,27 @@ class ReplyItemGrpc extends StatelessWidget {
   Widget _buildContent(BuildContext context, ColorScheme colorScheme) {
     final replyControl = replyItem.replyControl;
     final padding = EdgeInsets.only(left: replyLevel == 0 ? 6 : 45, right: 6);
+    if (Dafeiyu.shouldFold(replyItem)) {
+      return Column(
+        mainAxisSize: .min,
+        crossAxisAlignment: .start,
+        children: [
+          _buildHeader(context, colorScheme),
+          const SizedBox(height: 8),
+          Padding(
+            padding: padding,
+            child: DfyFoldBar(
+              verdict: Dafeiyu.verdictOf(replyItem)!,
+              onExpand: () {
+                Dafeiyu.expanded.add(replyItem.id.toInt());
+                (context as Element).markNeedsBuild();
+              },
+            ),
+          ),
+          const SizedBox(height: 6),
+        ],
+      );
+    }
     return Column(
       mainAxisSize: .min,
       crossAxisAlignment: .start,
@@ -661,12 +698,37 @@ class ReplyItemGrpc extends StatelessWidget {
                                 ? ''
                                 : ' ',
                           ),
-                          _buildMessage(
-                            context,
-                            colorScheme,
-                            childReply.content,
-                            childReply.replyControl,
-                          ),
+                          if (Dafeiyu.verdictOf(childReply) case final verdict?
+                              when verdict.level == DfyLevel.fish) ...[
+                            WidgetSpan(
+                              alignment: .middle,
+                              child: DfyBadge(
+                                item: childReply,
+                                verdict: verdict,
+                                onSendHome: onDelete == null
+                                    ? null
+                                    : () => onDelete!(replyItem, index),
+                                onChanged: () {
+                                  if (context.mounted) {
+                                    (context as Element).markNeedsBuild();
+                                  }
+                                },
+                              ),
+                            ),
+                            const TextSpan(text: ' '),
+                          ],
+                          if (Dafeiyu.shouldFold(childReply))
+                            TextSpan(
+                              text: '（大肥鱼评论已折叠）',
+                              style: TextStyle(color: colorScheme.outline),
+                            )
+                          else
+                            _buildMessage(
+                              context,
+                              colorScheme,
+                              childReply.content,
+                              childReply.replyControl,
+                            ),
                         ],
                       ),
                     ),
@@ -1210,6 +1272,30 @@ class ReplyItemGrpc extends StatelessWidget {
                 '${replyItem.replyControl.isUpTop ? '取消' : ''}置顶',
                 style: style,
               ),
+            ),
+          if (Dafeiyu.enable)
+            ListTile(
+              onTap: () {
+                Get.back();
+                final verdict = Dafeiyu.verdictOf(item);
+                if (verdict == null) {
+                  SmartDialog.showToast(
+                    Dafeiyu.whitelist.contains(item.mid.toInt())
+                        ? '已标记为人类'
+                        : '暂无鉴定结果',
+                  );
+                  return;
+                }
+                showDfyReport(
+                  context,
+                  item: item,
+                  verdict: verdict,
+                  onSendHome: onDelete,
+                );
+              },
+              minLeadingWidth: 0,
+              leading: const Text('🐟', style: TextStyle(fontSize: 16)),
+              title: Text('大肥鱼鉴定', style: style),
             ),
           ListTile(
             onTap: () {

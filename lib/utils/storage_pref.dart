@@ -33,6 +33,7 @@ import 'package:PiliPlus/plugin/pl_player/models/bottom_progress_behavior.dart';
 import 'package:PiliPlus/plugin/pl_player/models/fullscreen_mode.dart';
 import 'package:PiliPlus/plugin/pl_player/models/hwdec_type.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
+import 'package:PiliPlus/utils/dafeiyu/dafeiyu.dart' show DfyAction;
 import 'package:PiliPlus/utils/device_utils.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
@@ -1071,4 +1072,38 @@ abstract final class Pref {
 
   static bool get threadRipper =>
       _setting.get(SettingBoxKey.threadRipper, defaultValue: false);
+
+  static bool get dfyEnable =>
+      _setting.get(SettingBoxKey.dfyEnable, defaultValue: true);
+
+  static int get dfyThreshold =>
+      _setting.get(SettingBoxKey.dfyThreshold, defaultValue: 60);
+
+  static DfyAction get dfyAction =>
+      DfyAction.values.elementAtOrNull(
+        _setting.get(SettingBoxKey.dfyAction, defaultValue: 0),
+      ) ??
+      DfyAction.mark;
+
+  static Set<int> get dfyWhitelist =>
+      (_localCache.get(LocalCacheKey.dfyWhitelist) as Iterable?)
+          ?.cast<int>()
+          .toSet() ??
+      <int>{};
+
+  static Set<int> get dfySentHome =>
+      (_localCache.get(LocalCacheKey.dfySentHome) as Iterable?)
+          ?.cast<int>()
+          .toSet() ??
+      <int>{};
+
+  static Map<int, List<int>> get dfyPriors {
+    final raw = _localCache.get(LocalCacheKey.dfyPriors);
+    if (raw is! Map) return <int, List<int>>{};
+    return {
+      for (final e in raw.entries)
+        if (e.key is int && e.value is List)
+          e.key as int: (e.value as List).cast<int>().toList(),
+    };
+  }
 }

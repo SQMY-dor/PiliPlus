@@ -25,6 +25,7 @@ import 'package:PiliPlus/models/dynamics/result.dart'
 import 'package:PiliPlus/pages/common/slide/common_slide_page.dart';
 import 'package:PiliPlus/pages/home/controller.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
+import 'package:PiliPlus/pages/setting/models/dafeiyu_settings.dart';
 import 'package:PiliPlus/pages/setting/models/model.dart';
 import 'package:PiliPlus/pages/setting/widgets/select_dialog.dart';
 import 'package:PiliPlus/pages/setting/widgets/slider_dialog.dart';
@@ -418,6 +419,7 @@ List<SettingsModel> get extraSettings => [
     defaultVal: false,
     onChanged: (value) => ReplyGrpc.antiGoodsReply = value,
   ),
+  ...dafeiyuSettings,
   SwitchModel(
     title: '侧滑关闭二级页面',
     leading: const Icon(CustomIcons.touch_app_rotate_270),
