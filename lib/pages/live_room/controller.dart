@@ -9,7 +9,7 @@ import 'package:PiliPlus/http/live.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/http/video.dart';
 import 'package:PiliPlus/models/common/super_chat_type.dart';
-import 'package:PiliPlus/models/common/video/live_quality.dart';
+import 'package:PiliPlus/models/common/video/base_quality.dart';
 import 'package:PiliPlus/models/model_owner.dart';
 import 'package:PiliPlus/models_new/live/live_danmaku/danmaku_msg.dart';
 import 'package:PiliPlus/models_new/live/live_danmaku/live_emote.dart';
@@ -114,11 +114,15 @@ class LiveRoomController extends GetxController {
   int builtLength = 0;
   final messages = <dynamic>[].obs;
   bool get shouldRefresh => builtLength != messages.length;
-  late final fsSC = Rxn<SuperChatItem>();
   late final RxList<SuperChatItem> superChatMsg = <SuperChatItem>[].obs;
   final disableAutoScroll = false.obs;
   bool autoScroll = true;
   LiveMessageStream? _msgStream;
+
+  late final fsSC = Rxn<SuperChatItem>();
+  late final enableFSSC = Pref.enableFullScreenSC;
+  late final fsSCScale = Pref.fullScreenSCScale;
+  late final fsSCOpacity = Pref.fullScreenSCOpacity;
 
   List<String> _keywordList = const [];
   Set<int> _shieldUids = const {};
@@ -127,14 +131,16 @@ class LiveRoomController extends GetxController {
   late final RxInt pageIndex = 0.obs;
   PageController? pageController;
 
-  int? currentQn = PlatformUtils.isMobile ? null : Pref.liveQuality;
-
   /// 直播强制原画: 用户手动切换画质后不再强制
   late bool _forceOrigin = Pref.liveForceOrigin;
   bool _forceOriginChecked = false;
-  final currentQnDesc = ''.obs;
   final RxBool isPortrait = false.obs;
-  late List<({int code, String desc})> acceptQnList = [];
+  late List<LiveQuality> acceptQnList = [];
+  final Rxn<LiveQuality> currentQn = Rxn<LiveQuality>(
+    PlatformUtils.isMobile || Platform.isLinux
+        ? null
+        : .fromCode(Pref.liveQuality),
+  );
 
   late final bool isLogin;
   late final int mid;
@@ -236,9 +242,11 @@ class LiveRoomController extends GetxController {
   }
 
   Future<void> queryLiveUrl({bool autoFullScreenFlag = false}) async {
-    currentQn ??= await ConnectivityUtils.isWiFi
-        ? Pref.liveQuality
-        : Pref.liveQualityCellular;
+    currentQn.value ??= .fromCode(
+      await ConnectivityUtils.isWiFi
+          ? Pref.liveQuality
+          : Pref.liveQualityCellular,
+    );
     if (_forceOrigin && !_forceOriginChecked) {
       _forceOriginChecked = true;
       // 原画码率较高，仅在 Wi-Fi 下强制
@@ -247,8 +255,8 @@ class LiveRoomController extends GetxController {
     final res = await LiveHttp.liveRoomInfo(
       roomId: roomId,
       qn: _forceOrigin
-          ? math.max(currentQn!, LiveQuality.origin.code)
-          : currentQn,
+          ? math.max(currentQn.value!.code, LiveQuality.origin.code)
+          : currentQn.value!.code,
       onlyAudio: plPlayerController.onlyPlayAudio.value,
     );
     if (res case Success(:final response)) {
@@ -335,16 +343,9 @@ class LiveRoomController extends GetxController {
         .getOrFirst(formatIndex)
         .codec
         .getOrFirst(codecIndex);
+    acceptQnList = item.acceptQn;
     // 以服务端返回的码率为准
-    currentQn = item.currentQn;
-    acceptQnList = item.acceptQn.map((e) {
-      return (
-        code: e,
-        desc: LiveQuality.fromCode(e)?.desc ?? e.toString(),
-      );
-    }).toList();
-    currentQnDesc.value =
-        LiveQuality.fromCode(currentQn)?.desc ?? currentQn.toString();
+    currentQn.value = item.currentQn;
     videoUrl = VideoUtils.getLiveCdnUrl(item, index: liveUrlIndex);
     if (_forceOrigin) {
       if (LiveOriginUtils.forceOrigin(videoUrl!) case final originUrl?) {
@@ -360,10 +361,9 @@ class LiveRoomController extends GetxController {
     if (await LiveOriginUtils.probe(originUrl)) {
       if (isClosed || videoUrl != fallbackUrl) return;
       videoUrl = originUrl;
-      if ((currentQn ?? 0) < LiveQuality.origin.code) {
-        currentQn = LiveQuality.origin.code;
+      if ((currentQn.value?.code ?? 0) < LiveQuality.origin.code) {
+        currentQn.value = LiveQuality.origin;
       }
-      currentQnDesc.value = LiveQuality.origin.desc;
     } else {
       if (isClosed || videoUrl != fallbackUrl) return;
       // 本直播间不再尝试
@@ -555,7 +555,9 @@ class LiveRoomController extends GetxController {
     messages.clear();
     if (showSuperChat) {
       superChatMsg.clear();
-      fsSC.value = null;
+      if (enableFSSC) {
+        fsSC.value = null;
+      }
     }
     scrollController
       ..removeListener(listener)
@@ -566,14 +568,12 @@ class LiveRoomController extends GetxController {
   }
 
   // 修改画质
-  Future<void>? changeQn(int qn) {
-    if (currentQn == qn) {
+  Future<void>? changeQn(LiveQuality qn) {
+    if (currentQn.value == qn) {
       return null;
     }
-    currentQn = qn;
+    currentQn.value = qn;
     _forceOrigin = false;
-    currentQnDesc.value =
-        LiveQuality.fromCode(currentQn)?.desc ?? currentQn.toString();
     return queryLiveUrl();
   }
 
@@ -679,6 +679,7 @@ class LiveRoomController extends GetxController {
           final item = SuperChatItem.fromJson(obj['data'], roomId);
           superChatMsg.insert(0, item);
           addDm(item);
+          if (!enableFSSC) return;
           if (Platform.isAndroid && AndroidHelper.isPipMode) return;
           if (plPlayerController.showDanmaku &&
               (isFullScreen || plPlayerController.isDesktopPip)) {
@@ -780,10 +781,10 @@ class LiveRoomController extends GetxController {
           return Theme(
             data: ThemeUtils.darkTheme,
             child: LiveSendDmPanel(
-              fromEmote: fromEmote,
               liveRoomController: this,
               items: savedDanmaku,
               autofocus: !fromEmote,
+              panelType: fromEmote ? .emoji : .none,
               onSave: (msg) {
                 if (msg.isEmpty) {
                   savedDanmaku?.clear();
