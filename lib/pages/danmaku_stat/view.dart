@@ -344,18 +344,22 @@ class _DanmakuStatPageState extends State<DanmakuStatPage> {
   }
 
   Future<void> _crack(String hash) async {
-    var res = _crackCache[hash];
-    if (res == null) {
+    List<int>? cached = _crackCache[hash];
+    if (cached == null) {
       SmartDialog.showLoading(msg: '反查中（最多 11 位 UID）');
       try {
-        res = await compute(DmMidHash.crackArgs, <Object>[hash, 11]);
-        _crackCache[hash] = res;
+        final List<int> r = await compute(
+          DmMidHash.crackArgs,
+          <Object>[hash, 11],
+        );
+        _crackCache[hash] = r;
+        cached = r;
       } finally {
         SmartDialog.dismiss();
       }
     }
     if (!mounted) return;
-    final list = res;
+    final List<int> list = cached;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
