@@ -25,6 +25,7 @@ import 'package:PiliPlus/models/video/play/url.dart';
 import 'package:PiliPlus/models_new/video/video_play_info/subtitle.dart';
 import 'package:PiliPlus/pages/common/common_intro_controller.dart';
 import 'package:PiliPlus/pages/danmaku/danmaku_model.dart';
+import 'package:PiliPlus/pages/danmaku_stat/view.dart';
 import 'package:PiliPlus/pages/setting/models/play_settings.dart'
     show showPlayerVolumeDialog;
 import 'package:PiliPlus/pages/setting/widgets/popup_item.dart';
@@ -688,6 +689,22 @@ class HeaderControlState extends State<HeaderControl>
                   leading: const Icon(CustomIcons.dm_on, size: 20),
                   title: const Text('弹幕列表', style: titleStyle),
                 ),
+                if (!isFileSource)
+                  ListTile(
+                    dense: true,
+                    onTap: () {
+                      Get.back();
+                      final cid = videoDetailCtr.cid.value;
+                      DanmakuStatPage.open(
+                        cid: cid,
+                        durationSec: plPlayerController.duration.value,
+                        title: introController.videoDetail.value.title,
+                        bvid: videoDetailCtr.bvid,
+                      );
+                    },
+                    leading: const Icon(Icons.bar_chart, size: 20),
+                    title: const Text('弹幕统计 / 查发送者', style: titleStyle),
+                  ),
                 ListTile(
                   dense: true,
                   onTap: () {
