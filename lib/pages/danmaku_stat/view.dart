@@ -465,7 +465,6 @@ class _DanmakuStatPageState extends State<DanmakuStatPage> {
     await StorageUtils.saveBytes2File(
       name: '$_fileBase.$type',
       bytes: Uint8List.fromList(utf8.encode(text)),
-      allowedExtensions: [type],
     );
   }
 
