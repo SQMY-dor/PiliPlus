@@ -359,7 +359,7 @@ class _DanmakuStatPageState extends State<DanmakuStatPage> {
       }
     }
     if (!mounted) return;
-    final List<int> list = cached;
+    final List<int> list = cached ?? const [];
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
